@@ -7,6 +7,18 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
+    <style name="Theme.Pulse.Drawer" parent="Theme.Pulse">
+        <item name="android:windowAnimationStyle">@style/DrawerAnimation</item>
+        <item name="android:windowBackground">#1A1A1A</item>
+    </style>
+
+    <style name="DrawerAnimation">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_up_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/stay</item>
+        <item name="android:activityCloseEnterAnimation">@anim/stay</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_down_out</item>
+    </style>
+
     <style name="Theme.Pulse.Settings" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">#1A1A1A</item>
         <item name="android:statusBarColor">#1A1A1A</item>
