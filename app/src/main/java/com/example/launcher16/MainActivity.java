@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -38,24 +39,34 @@ public class MainActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(16), dp(60), dp(16), dp(24));
+        root.setPadding(dp(12), dp(60), dp(12), dp(24));
 
+        // Arama çubuğu
         searchBar = new SearchBarView(this);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(56));
         sp.bottomMargin = dp(24);
         root.addView(searchBar, sp);
 
+        // Arama çubuğuna tıklayınca Google'da ara
+        searchBar.setOnClickListener(v -> {
+            Intent i = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://www.google.com"));
+            startActivity(i);
+        });
+
+        // Uygulama grid'i - 5 sütun, daha büyük ikonlar
         appGrid = new GridView(this);
-        appGrid.setNumColumns(4);
-        appGrid.setVerticalSpacing(dp(20));
-        appGrid.setHorizontalSpacing(dp(8));
+        appGrid.setNumColumns(5);
+        appGrid.setVerticalSpacing(dp(28));
+        appGrid.setHorizontalSpacing(dp(4));
         appGrid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
         appGrid.setSelector(android.R.color.transparent);
         LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         root.addView(appGrid, gp);
 
+        // Dock
         dockView = new DockView(this);
         LinearLayout.LayoutParams dp2 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(88));
@@ -73,6 +84,14 @@ public class MainActivity extends Activity {
             if (i != null) startActivity(i);
         });
 
+        appGrid.setOnItemLongClickListener((parent, view, position, id) -> {
+            AppInfo app = appList.get(position);
+            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            i.setData(Uri.parse("package:" + app.packageName));
+            startActivity(i);
+            return true;
+        });
+
         dockView.setApps(getDockApps(), app -> {
             Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
             if (i != null) startActivity(i);
@@ -86,6 +105,9 @@ public class MainActivity extends Activity {
         List<ResolveInfo> resolved = pm.queryIntentActivities(mainIntent, 0);
         appList.clear();
         for (ResolveInfo ri : resolved) {
+            // Kendi launcher'ımızı menüde gösterme
+            if (ri.activityInfo.packageName.equals(getPackageName())) continue;
+
             AppInfo info = new AppInfo();
             info.label = ri.loadLabel(pm).toString();
             info.packageName = ri.activityInfo.packageName;
@@ -98,15 +120,20 @@ public class MainActivity extends Activity {
         List<AppInfo> dock = new ArrayList<>();
         String[] favorites = {
                 "com.android.dialer", "com.android.mms",
-                "com.android.chrome", "com.android.camera2"
+                "com.android.chrome", "com.android.camera2",
+                "com.google.android.apps.messaging"
         };
         for (String pkg : favorites) {
             for (AppInfo a : appList) {
-                if (a.packageName.equals(pkg)) { dock.add(a); break; }
+                if (a.packageName.equals(pkg) && !dock.contains(a)) {
+                    dock.add(a);
+                    break;
+                }
             }
+            if (dock.size() >= 5) break;
         }
         if (dock.isEmpty()) {
-            dock.addAll(appList.subList(0, Math.min(4, appList.size())));
+            dock.addAll(appList.subList(0, Math.min(5, appList.size())));
         }
         return dock;
     }
