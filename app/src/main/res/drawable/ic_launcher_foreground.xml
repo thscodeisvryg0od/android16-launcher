@@ -5,24 +5,12 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Pulse wave -->
     <path
-        android:pathData="M54,28 c-18,0 -26,4 -26,26 c0,22 8,26 26,26 c18,0 26,-4 26,-26 c0,-22 -8,-26 -26,-26z"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:fillColor="#00000000" />
-
-    <path
-        android:pathData="M44,46 L50,42 L50,66"
+        android:pathData="M30,54 L40,54 L45,42 L51,66 L57,36 L63,60 L68,54 L78,54"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:fillColor="#00000000" />
-
-    <path
-        android:pathData="M66,44 a6,6 0 1,0 0.1,0 M66,52 a7,7 0 1,1 -0.1,0"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
         android:fillColor="#00000000" />
 </vector>
