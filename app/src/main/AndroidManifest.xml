@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
 
     <application
         android:allowBackup="true"
@@ -30,7 +31,7 @@
         <activity
             android:name=".AppDrawerActivity"
             android:exported="false"
-            android:theme="@style/Theme.Pulse" />
+            android:theme="@style/Theme.Pulse.Drawer" />
 
         <activity
             android:name=".SettingsActivity"
