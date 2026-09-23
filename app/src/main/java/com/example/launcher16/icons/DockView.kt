@@ -3,9 +3,6 @@ package com.example.launcher16.icons
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Handler
@@ -17,16 +14,15 @@ import android.view.View
 
 import com.example.launcher16.AppInfo
 
+/**
+ * Dock without background pill — icons float directly on wallpaper.
+ * Matches Pixel / reference style.
+ */
 class DockView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
-
-    private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#40FFFFFF")
-    }
-    private val rect = RectF()
 
     private var apps: List<AppInfo> = emptyList()
     private var onAppClick: java.util.function.Consumer<AppInfo>? = null
@@ -59,13 +55,10 @@ class DockView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val r = height * 0.35f
-        rect.set(0f, 0f, width.toFloat(), height.toFloat())
-        canvas.drawRoundRect(rect, r, r, bgPaint)
-
         if (apps.isEmpty()) return
+
         val slotW = width.toFloat() / apps.size
-        val baseSize = height * 0.60f
+        val baseSize = height * 0.75f
         val cy = height / 2f
 
         apps.forEachIndexed { i, app ->
@@ -93,7 +86,7 @@ class DockView @JvmOverloads constructor(
                 downIndex = idx
                 longPressed = false
                 invalidate()
-                handler.postDelayed(longPressRunnable, 600L)
+                handler.postDelayed(longPressRunnable, 550L)
             }
             MotionEvent.ACTION_UP -> {
                 handler.removeCallbacks(longPressRunnable)
