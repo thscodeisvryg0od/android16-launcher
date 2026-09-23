@@ -1,6 +1,7 @@
 package com.example.launcher16;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,11 +34,11 @@ public class AppAdapter extends BaseAdapter {
         LinearLayout container = new LinearLayout(ctx);
         container.setOrientation(LinearLayout.VERTICAL);
         container.setGravity(Gravity.CENTER);
-        container.setPadding(4, 8, 4, 8);
+        container.setPadding(dp(2), dp(4), dp(2), dp(4));
 
         AppIconView iconView = new AppIconView(ctx);
         iconView.setIcon(app.icon);
-        iconView.setLayoutParams(new LinearLayout.LayoutParams(dp(56), dp(56)));
+        iconView.setLayoutParams(new LinearLayout.LayoutParams(dp(72), dp(72)));
         container.addView(iconView);
 
         TextView tv = new TextView(ctx);
@@ -46,7 +47,9 @@ public class AppAdapter extends BaseAdapter {
         tv.setTextColor(0xFFFFFFFF);
         tv.setGravity(Gravity.CENTER);
         tv.setMaxLines(1);
-        tv.setPadding(0, dp(6), 0, 0);
+        tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        tv.setShadowLayer(4f, 0f, 1f, Color.BLACK);
+        tv.setPadding(dp(2), dp(8), dp(2), 0);
         container.addView(tv);
 
         return container;
