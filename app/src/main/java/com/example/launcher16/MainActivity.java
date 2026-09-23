@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.GridView;
@@ -22,12 +24,16 @@ public class MainActivity extends Activity {
     private GridView appGrid;
     private AppAdapter adapter;
     private final List<AppInfo> appList = new ArrayList<>();
+    private final List<AppInfo> allApps = new ArrayList<>();
     private SearchBarView searchBar;
     private DockView dockView;
+    private SettingsManager settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        settings = new SettingsManager(this);
 
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER,
@@ -48,16 +54,34 @@ public class MainActivity extends Activity {
         sp.bottomMargin = dp(24);
         root.addView(searchBar, sp);
 
-        // Arama çubuğuna tıklayınca Google'da ara
-        searchBar.setOnClickListener(v -> {
-            Intent i = new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://www.google.com"));
-            startActivity(i);
+        // Uzun bas → Ayarlar
+        searchBar.setOnLongClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            return true;
         });
 
-        // Uygulama grid'i - 5 sütun, daha büyük ikonlar
+        // Yazı değişince filtrele
+        searchBar.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                filterApps(s.toString());
+            }
+        });
+
+        // Enter'a bas → ilk sonucu aç
+        searchBar.setOnEditorActionListener((v, actionId, event) -> {
+            if (!appList.isEmpty()) {
+                AppInfo app = appList.get(0);
+                Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
+                if (i != null) startActivity(i);
+            }
+            return true;
+        });
+
+        // Grid
         appGrid = new GridView(this);
-        appGrid.setNumColumns(5);
+        appGrid.setNumColumns(settings.getColumns());
         appGrid.setVerticalSpacing(dp(28));
         appGrid.setHorizontalSpacing(dp(4));
         appGrid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
@@ -76,7 +100,7 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         loadApps();
-        adapter = new AppAdapter(this, appList);
+        adapter = new AppAdapter(this, appList, settings.getIconSize(), settings.getShowLabels());
         appGrid.setAdapter(adapter);
         appGrid.setOnItemClickListener((parent, view, position, id) -> {
             AppInfo app = appList.get(position);
@@ -98,22 +122,50 @@ public class MainActivity extends Activity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Ayarlar değişmiş olabilir, grid'i yeniden yapılandır
+        if (adapter != null) {
+            appGrid.setNumColumns(settings.getColumns());
+            adapter = new AppAdapter(this, appList, settings.getIconSize(), settings.getShowLabels());
+            appGrid.setAdapter(adapter);
+        }
+    }
+
     private void loadApps() {
         PackageManager pm = getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> resolved = pm.queryIntentActivities(mainIntent, 0);
-        appList.clear();
-        for (ResolveInfo ri : resolved) {
-            // Kendi launcher'ımızı menüde gösterme
-            if (ri.activityInfo.packageName.equals(getPackageName())) continue;
 
+        allApps.clear();
+        for (ResolveInfo ri : resolved) {
+            if (ri.activityInfo.packageName.equals(getPackageName())) continue;
             AppInfo info = new AppInfo();
             info.label = ri.loadLabel(pm).toString();
             info.packageName = ri.activityInfo.packageName;
             info.icon = ri.loadIcon(pm);
-            appList.add(info);
+            allApps.add(info);
         }
+
+        appList.clear();
+        appList.addAll(allApps);
+    }
+
+    private void filterApps(String query) {
+        appList.clear();
+        if (query.trim().isEmpty()) {
+            appList.addAll(allApps);
+        } else {
+            String lower = query.toLowerCase().trim();
+            for (AppInfo a : allApps) {
+                if (a.label.toLowerCase().contains(lower)) {
+                    appList.add(a);
+                }
+            }
+        }
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     private List<AppInfo> getDockApps() {
@@ -124,7 +176,7 @@ public class MainActivity extends Activity {
                 "com.google.android.apps.messaging"
         };
         for (String pkg : favorites) {
-            for (AppInfo a : appList) {
+            for (AppInfo a : allApps) {
                 if (a.packageName.equals(pkg) && !dock.contains(a)) {
                     dock.add(a);
                     break;
@@ -133,7 +185,7 @@ public class MainActivity extends Activity {
             if (dock.size() >= 5) break;
         }
         if (dock.isEmpty()) {
-            dock.addAll(appList.subList(0, Math.min(5, appList.size())));
+            dock.addAll(allApps.subList(0, Math.min(5, allApps.size())));
         }
         return dock;
     }
