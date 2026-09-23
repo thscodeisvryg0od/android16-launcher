@@ -17,10 +17,14 @@ public class AppAdapter extends BaseAdapter {
 
     private final Context ctx;
     private final List<AppInfo> apps;
+    private final int iconSizeDp;
+    private final boolean showLabels;
 
-    public AppAdapter(Context ctx, List<AppInfo> apps) {
+    public AppAdapter(Context ctx, List<AppInfo> apps, int iconSizeDp, boolean showLabels) {
         this.ctx = ctx;
         this.apps = apps;
+        this.iconSizeDp = iconSizeDp;
+        this.showLabels = showLabels;
     }
 
     @Override public int getCount() { return apps.size(); }
@@ -38,19 +42,21 @@ public class AppAdapter extends BaseAdapter {
 
         AppIconView iconView = new AppIconView(ctx);
         iconView.setIcon(app.icon);
-        iconView.setLayoutParams(new LinearLayout.LayoutParams(dp(72), dp(72)));
+        iconView.setLayoutParams(new LinearLayout.LayoutParams(dp(iconSizeDp), dp(iconSizeDp)));
         container.addView(iconView);
 
-        TextView tv = new TextView(ctx);
-        tv.setText(app.label);
-        tv.setTextSize(11f);
-        tv.setTextColor(0xFFFFFFFF);
-        tv.setGravity(Gravity.CENTER);
-        tv.setMaxLines(1);
-        tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        tv.setShadowLayer(4f, 0f, 1f, Color.BLACK);
-        tv.setPadding(dp(2), dp(8), dp(2), 0);
-        container.addView(tv);
+        if (showLabels) {
+            TextView tv = new TextView(ctx);
+            tv.setText(app.label);
+            tv.setTextSize(11f);
+            tv.setTextColor(0xFFFFFFFF);
+            tv.setGravity(Gravity.CENTER);
+            tv.setMaxLines(1);
+            tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            tv.setShadowLayer(4f, 0f, 1f, Color.BLACK);
+            tv.setPadding(dp(2), dp(8), dp(2), 0);
+            container.addView(tv);
+        }
 
         return container;
     }
