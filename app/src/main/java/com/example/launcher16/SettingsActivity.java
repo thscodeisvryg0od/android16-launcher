@@ -2,9 +2,11 @@ package com.example.launcher16;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.Switch;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 
 public class SettingsActivity extends Activity {
 
@@ -15,6 +17,19 @@ public class SettingsActivity extends Activity {
 
         SettingsManager sm = new SettingsManager(this);
 
+        // At a Glance
+        Switch glanceSwitch = findViewById(R.id.glanceSwitch);
+        glanceSwitch.setChecked(sm.getAtAGlance());
+
+        // Add icons
+        Switch addIconsSwitch = findViewById(R.id.addIconsSwitch);
+        addIconsSwitch.setChecked(sm.getAddIcons());
+
+        // Show labels
+        Switch labelsSwitch = findViewById(R.id.labelsSwitch);
+        labelsSwitch.setChecked(sm.getShowLabels());
+
+        // Columns
         RadioButton col4 = findViewById(R.id.col4);
         RadioButton col5 = findViewById(R.id.col5);
         RadioButton col6 = findViewById(R.id.col6);
@@ -23,27 +38,34 @@ public class SettingsActivity extends Activity {
         else if (cols == 6) col6.setChecked(true);
         else col5.setChecked(true);
 
-        RadioButton sizeSmall = findViewById(R.id.sizeSmall);
-        RadioButton sizeMedium = findViewById(R.id.sizeMedium);
-        RadioButton sizeLarge = findViewById(R.id.sizeLarge);
+        // Icon size
+        RadioButton szSmall = findViewById(R.id.sizeSmall);
+        RadioButton szMedium = findViewById(R.id.sizeMedium);
+        RadioButton szLarge = findViewById(R.id.sizeLarge);
         int size = sm.getIconSize();
-        if (size <= 56) sizeSmall.setChecked(true);
-        else if (size >= 88) sizeLarge.setChecked(true);
-        else sizeMedium.setChecked(true);
+        if (size <= 60) szSmall.setChecked(true);
+        else if (size >= 88) szLarge.setChecked(true);
+        else szMedium.setChecked(true);
 
-        Switch showLabels = findViewById(R.id.showLabels);
-        showLabels.setChecked(sm.getShowLabels());
+        // Language
+        Spinner langSpinner = findViewById(R.id.langSpinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this, R.array.languages, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        langSpinner.setAdapter(adapter);
 
+        // Save
         Button save = findViewById(R.id.saveBtn);
         save.setOnClickListener(v -> {
-            int newCols = col4.isChecked() ? 4 : (col6.isChecked() ? 6 : 5);
-            sm.setColumns(newCols);
-
-            int newSize = sizeSmall.isChecked() ? 56 : (sizeLarge.isChecked() ? 88 : 72);
-            sm.setIconSize(newSize);
-
-            sm.setShowLabels(showLabels.isChecked());
-
+            sm.setAtAGlance(glanceSwitch.isChecked());
+            sm.setAddIcons(addIconsSwitch.isChecked());
+            sm.setShowLabels(labelsSwitch.isChecked());
+            sm.setColumns(col4.isChecked() ? 4 : (col6.isChecked() ? 6 : 5));
+            sm.setIconSize(szSmall.isChecked() ? 56 : (szLarge.isChecked() ? 88 : 72));
+            // Language: store selection
+            String[] langCodes = {"en", "tr", "system"};
+            int pos = langSpinner.getSelectedItemPosition();
+            if (pos >= 0 && pos < langCodes.length) sm.setLanguage(langCodes[pos]);
             finish();
         });
     }
