@@ -1,38 +1,37 @@
 package com.example.launcher16;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.view.GestureDetector;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.GridView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
+import com.example.launcher16.icons.AtAGlanceView;
 import com.example.launcher16.icons.DockView;
-import com.example.launcher16.icons.SearchBarView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private GridView appGrid;
-    private AppAdapter adapter;
-    private final List<AppInfo> appList = new ArrayList<>();
     private final List<AppInfo> allApps = new ArrayList<>();
-    private SearchBarView searchBar;
     private DockView dockView;
     private SettingsManager settings;
+    private GestureDetector gesture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         settings = new SettingsManager(this);
 
         getWindow().setFlags(
@@ -43,94 +42,101 @@ public class MainActivity extends Activity {
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(12), dp(60), dp(12), dp(24));
+        FrameLayout root = new FrameLayout(this);
+        root.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
 
-        // Arama çubuğu
-        searchBar = new SearchBarView(this);
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(56));
-        sp.bottomMargin = dp(24);
-        root.addView(searchBar, sp);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(16), dp(60), dp(16), dp(24));
 
-        // Uzun bas → Ayarlar
-        searchBar.setOnLongClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-            return true;
-        });
+        // At a Glance
+        if (settings.getAtAGlance()) {
+            AtAGlanceView glance = new AtAGlanceView(this);
+            LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
+            gp.bottomMargin = dp(8);
+            content.addView(glance, gp);
+        }
 
-        // Yazı değişince filtrele
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void afterTextChanged(Editable s) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
-                filterApps(s.toString());
-            }
-        });
-
-        // Enter'a bas → ilk sonucu aç
-        searchBar.setOnEditorActionListener((v, actionId, event) -> {
-            if (!appList.isEmpty()) {
-                AppInfo app = appList.get(0);
-                Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
-                if (i != null) startActivity(i);
-            }
-            return true;
-        });
-
-        // Grid
-        appGrid = new GridView(this);
-        appGrid.setNumColumns(settings.getColumns());
-        appGrid.setVerticalSpacing(dp(28));
-        appGrid.setHorizontalSpacing(dp(4));
-        appGrid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
-        appGrid.setSelector(android.R.color.transparent);
-        LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
-        root.addView(appGrid, gp);
+        // Spacer
+        View spacer = new View(this);
+        content.addView(spacer, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
         // Dock
         dockView = new DockView(this);
         LinearLayout.LayoutParams dp2 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(88));
         dp2.topMargin = dp(16);
-        root.addView(dockView, dp2);
+        content.addView(dockView, dp2);
 
+        root.addView(content);
         setContentView(root);
 
         loadApps();
-        adapter = new AppAdapter(this, appList, settings.getIconSize(), settings.getShowLabels());
-        appGrid.setAdapter(adapter);
-        appGrid.setOnItemClickListener((parent, view, position, id) -> {
-            AppInfo app = appList.get(position);
-            Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
-            if (i != null) startActivity(i);
-        });
-
-        appGrid.setOnItemLongClickListener((parent, view, position, id) -> {
-            AppInfo app = appList.get(position);
-            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            i.setData(Uri.parse("package:" + app.packageName));
-            startActivity(i);
-            return true;
-        });
 
         dockView.setApps(getDockApps(), app -> {
             Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
             if (i != null) startActivity(i);
         });
+
+        // Swipe up → App Drawer
+        gesture = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float vx, float vy) {
+                if (e1 != null && e2 != null && (e1.getY() - e2.getY()) > 120) {
+                    startActivity(new Intent(MainActivity.this, AppDrawerActivity.class));
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                showHomeMenu();
+            }
+        });
+
+        root.setOnTouchListener((v, ev) -> gesture.onTouchEvent(ev));
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        // Ayarlar değişmiş olabilir, grid'i yeniden yapılandır
-        if (adapter != null) {
-            appGrid.setNumColumns(settings.getColumns());
-            adapter = new AppAdapter(this, appList, settings.getIconSize(), settings.getShowLabels());
-            appGrid.setAdapter(adapter);
-        }
+    public void onBackPressed() {
+        // Home screen - do nothing
+    }
+
+    private void showHomeMenu() {
+        String[] options = {
+                getString(R.string.menu_wallpaper),
+                getString(R.string.menu_widgets),
+                getString(R.string.menu_apps),
+                getString(R.string.menu_settings)
+        };
+
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setItems(options, (d, which) -> {
+                    switch (which) {
+                        case 0:
+                            try {
+                                Intent wp = new Intent(Intent.ACTION_SET_WALLPAPER);
+                                startActivity(Intent.createChooser(wp, "Wallpaper"));
+                            } catch (Exception ignored) {}
+                            break;
+                        case 1:
+                            startActivity(new Intent(MainActivity.this, AppDrawerActivity.class));
+                            break;
+                        case 2:
+                            startActivity(new Intent(MainActivity.this, AppDrawerActivity.class));
+                            break;
+                        case 3:
+                            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                            break;
+                    }
+                })
+                .show();
     }
 
     private void loadApps() {
@@ -138,7 +144,6 @@ public class MainActivity extends Activity {
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> resolved = pm.queryIntentActivities(mainIntent, 0);
-
         allApps.clear();
         for (ResolveInfo ri : resolved) {
             if (ri.activityInfo.packageName.equals(getPackageName())) continue;
@@ -148,24 +153,6 @@ public class MainActivity extends Activity {
             info.icon = ri.loadIcon(pm);
             allApps.add(info);
         }
-
-        appList.clear();
-        appList.addAll(allApps);
-    }
-
-    private void filterApps(String query) {
-        appList.clear();
-        if (query.trim().isEmpty()) {
-            appList.addAll(allApps);
-        } else {
-            String lower = query.toLowerCase().trim();
-            for (AppInfo a : allApps) {
-                if (a.label.toLowerCase().contains(lower)) {
-                    appList.add(a);
-                }
-            }
-        }
-        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     private List<AppInfo> getDockApps() {
