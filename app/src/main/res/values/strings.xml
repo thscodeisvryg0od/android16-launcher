@@ -1,4 +1,26 @@
 <resources>
-    <string name="app_name">Launcher 16</string>
-    <string name="search_hint">Ara…</string>
+    <string name="app_name">Pulse</string>
+    <string name="search_hint">Search apps…</string>
+    <string name="settings_title">Settings</string>
+    <string name="home_settings">Home settings</string>
+    <string name="appearance">Appearance</string>
+    <string name="general">General</string>
+    <string name="about">About</string>
+
+    <string name="at_a_glance">At a Glance</string>
+    <string name="add_icons_home">Add app icons to home screen</string>
+    <string name="show_labels">Show app labels</string>
+    <string name="grid_columns">Grid columns</string>
+    <string name="icon_size">Icon size</string>
+    <string name="language">Language</string>
+    <string name="version">Version</string>
+
+    <string name="size_small">Small</string>
+    <string name="size_medium">Medium</string>
+    <string name="size_large">Large</string>
+
+    <string name="menu_wallpaper">Wallpaper &amp; style</string>
+    <string name="menu_widgets">Widgets</string>
+    <string name="menu_apps">App list</string>
+    <string name="menu_settings">Settings</string>
 </resources>
