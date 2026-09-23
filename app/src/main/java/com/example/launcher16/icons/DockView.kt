@@ -1,11 +1,16 @@
 package com.example.launcher16.icons
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -27,6 +32,25 @@ class DockView @JvmOverloads constructor(
     private var onAppClick: java.util.function.Consumer<AppInfo>? = null
     private var pressedIndex = -1
 
+    private val handler = Handler(Looper.getMainLooper())
+    private var longPressed = false
+    private var downIndex = -1
+
+    private val longPressRunnable = Runnable {
+        if (downIndex >= 0 && downIndex < apps.size) {
+            longPressed = true
+            val app = apps[downIndex]
+            try {
+                val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                i.data = Uri.parse("package:${app.packageName}")
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(i)
+            } catch (_: Exception) { }
+            pressedIndex = -1
+            invalidate()
+        }
+    }
+
     fun setApps(list: List<AppInfo>, listener: java.util.function.Consumer<AppInfo>) {
         apps = list
         onAppClick = listener
@@ -41,7 +65,7 @@ class DockView @JvmOverloads constructor(
 
         if (apps.isEmpty()) return
         val slotW = width.toFloat() / apps.size
-        val baseSize = height * 0.55f
+        val baseSize = height * 0.60f
         val cy = height / 2f
 
         apps.forEachIndexed { i, app ->
@@ -65,15 +89,27 @@ class DockView @JvmOverloads constructor(
         val idx = (event.x / slotW).toInt().coerceIn(0, apps.size - 1)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                pressedIndex = idx; invalidate()
+                pressedIndex = idx
+                downIndex = idx
+                longPressed = false
+                invalidate()
+                handler.postDelayed(longPressRunnable, 600L)
             }
             MotionEvent.ACTION_UP -> {
-                if (idx == pressedIndex) onAppClick?.accept(apps[idx])
-                pressedIndex = -1; invalidate()
+                handler.removeCallbacks(longPressRunnable)
+                if (idx == pressedIndex && !longPressed) {
+                    onAppClick?.accept(apps[idx])
+                }
+                pressedIndex = -1
+                downIndex = -1
+                invalidate()
                 performClick()
             }
             MotionEvent.ACTION_CANCEL -> {
-                pressedIndex = -1; invalidate()
+                handler.removeCallbacks(longPressRunnable)
+                pressedIndex = -1
+                downIndex = -1
+                invalidate()
             }
         }
         return true
