@@ -24,10 +24,10 @@ class DockView @JvmOverloads constructor(
     private val rect = RectF()
 
     private var apps: List<AppInfo> = emptyList()
-    private var onAppClick: ((AppInfo) -> Unit)? = null
+    private var onAppClick: java.util.function.Consumer<AppInfo>? = null
     private var pressedIndex = -1
 
-    fun setApps(list: List<AppInfo>, listener: (AppInfo) -> Unit) {
+    fun setApps(list: List<AppInfo>, listener: java.util.function.Consumer<AppInfo>) {
         apps = list
         onAppClick = listener
         invalidate()
@@ -68,7 +68,7 @@ class DockView @JvmOverloads constructor(
                 pressedIndex = idx; invalidate()
             }
             MotionEvent.ACTION_UP -> {
-                if (idx == pressedIndex) onAppClick?.invoke(apps[idx])
+                if (idx == pressedIndex) onAppClick?.accept(apps[idx])
                 pressedIndex = -1; invalidate()
                 performClick()
             }
