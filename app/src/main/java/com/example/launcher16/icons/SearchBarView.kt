@@ -6,20 +6,16 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
-import android.view.View
+import android.widget.EditText
 
 class SearchBarView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
-) : View(context, attrs, defStyle) {
+) : EditText(context, attrs, defStyle) {
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#33FFFFFF")
-    }
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        isAntiAlias = true
     }
     private val dotsPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
@@ -31,10 +27,20 @@ class SearchBarView @JvmOverloads constructor(
         Color.parseColor("#34A853")
     )
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val r = height / 2f
+    init {
+        setBackgroundColor(Color.TRANSPARENT)
+        setTextColor(Color.WHITE)
+        setHintTextColor(Color.parseColor("#B0FFFFFF"))
+        hint = "Ara…"
+        setPadding(dp(76), 0, dp(20), 0)
+        isSingleLine = true
+        textSize = 15f
+        background = null
+        setSelectAllOnFocus(false)
+    }
 
+    override fun onDraw(canvas: Canvas) {
+        val r = height / 2f
         rect.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(rect, r, r, bgPaint)
 
@@ -46,8 +52,8 @@ class SearchBarView @JvmOverloads constructor(
             canvas.drawCircle(startX + i * dotRadius * 2.4f, cy, dotRadius, dotsPaint)
         }
 
-        textPaint.textSize = height * 0.30f
-        val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2f
-        canvas.drawText("Ara…", startX + dotRadius * 11f, textY, textPaint)
+        super.onDraw(canvas)
     }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 }
