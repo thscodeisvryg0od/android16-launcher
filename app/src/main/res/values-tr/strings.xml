@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Pulse</string>
+    <string name="search_hint">Uygulama ara…</string>
+    <string name="settings_title">Ayarlar</string>
+    <string name="home_settings">Ana ekran ayarları</string>
+    <string name="appearance">Görünüm</string>
+    <string name="general">Genel</string>
+    <string name="about">Hakkında</string>
+
+    <string name="at_a_glance">Bir Bakışta</string>
+    <string name="add_icons_home">Ana ekrana uygulama ikonu ekle</string>
+    <string name="show_labels">Uygulama isimlerini göster</string>
+    <string name="grid_columns">Izgara sütunları</string>
+    <string name="icon_size">İkon boyutu</string>
+    <string name="language">Dil</string>
+    <string name="version">Sürüm</string>
+
+    <string name="size_small">Küçük</string>
+    <string name="size_medium">Orta</string>
+    <string name="size_large">Büyük</string>
+
+    <string name="menu_wallpaper">Duvar kağıdı ve stil</string>
+    <string name="menu_widgets">Widget\'lar</string>
+    <string name="menu_apps">Uygulama listesi</string>
+    <string name="menu_settings">Ayarlar</string>
+
+    <string name="dock_count">Alt çubuk uygulama sayısı</string>
+    <string name="news_swipe">Sola kaydırınca Google Haberler</string>
+    <string name="hidden_apps">Gizli uygulamaları göster</string>
+    <string name="show_clock">Saati göster</string>
+
+    <string name="settings_saved">Ayarlar kaydedildi</string>
+    <string name="app_info">Uygulama bilgisi</string>
+    <string name="hide_app">Uygulamayı gizle</string>
+    <string name="unhide_app">Gizlemeyi kaldır</string>
+</resources>
