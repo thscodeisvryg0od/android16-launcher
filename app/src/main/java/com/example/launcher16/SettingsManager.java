@@ -20,20 +20,20 @@ public class SettingsManager {
     }
 
     public int getColumns() { return prefs.getInt(KEY_COLUMNS, 5); }
-    public void setColumns(int v) { prefs.edit().putInt(KEY_COLUMNS, v).apply(); }
+    public void setColumns(int v) { prefs.edit().putInt(KEY_COLUMNS, v).commit(); }
 
     public int getIconSize() { return prefs.getInt(KEY_ICON_SIZE, 72); }
-    public void setIconSize(int v) { prefs.edit().putInt(KEY_ICON_SIZE, v).apply(); }
+    public void setIconSize(int v) { prefs.edit().putInt(KEY_ICON_SIZE, v).commit(); }
 
     public boolean getShowLabels() { return prefs.getBoolean(KEY_SHOW_LABELS, true); }
-    public void setShowLabels(boolean v) { prefs.edit().putBoolean(KEY_SHOW_LABELS, v).apply(); }
+    public void setShowLabels(boolean v) { prefs.edit().putBoolean(KEY_SHOW_LABELS, v).commit(); }
 
     public boolean getAtAGlance() { return prefs.getBoolean(KEY_AT_GLANCE, true); }
-    public void setAtAGlance(boolean v) { prefs.edit().putBoolean(KEY_AT_GLANCE, v).apply(); }
+    public void setAtAGlance(boolean v) { prefs.edit().putBoolean(KEY_AT_GLANCE, v).commit(); }
 
     public boolean getAddIcons() { return prefs.getBoolean(KEY_ADD_ICONS, false); }
-    public void setAddIcons(boolean v) { prefs.edit().putBoolean(KEY_ADD_ICONS, v).apply(); }
+    public void setAddIcons(boolean v) { prefs.edit().putBoolean(KEY_ADD_ICONS, v).commit(); }
 
     public String getLanguage() { return prefs.getString(KEY_LANGUAGE, "en"); }
-    public void setLanguage(String v) { prefs.edit().putString(KEY_LANGUAGE, v).apply(); }
+    public void setLanguage(String v) { prefs.edit().putString(KEY_LANGUAGE, v).commit(); }
 }
