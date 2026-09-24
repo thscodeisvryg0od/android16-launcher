@@ -5,12 +5,15 @@ import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Insets;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -19,6 +22,7 @@ import com.example.launcher16.icons.AtAGlanceView;
 import com.example.launcher16.icons.DockView;
 import com.example.launcher16.icons.SearchBarView;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,14 +31,16 @@ public class MainActivity extends BaseActivity {
     private final List<AppInfo> allApps = new ArrayList<>();
     private DockView dockView;
     private SettingsManager settings;
+    private LinearLayout content;
 
     private float downY = 0f;
     private float downX = 0f;
     private boolean longPressFired = false;
+    private boolean swipeConsumed = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable longPressRunnable;
 
-    private static final int LONG_PRESS_MS = 550;
+    private static final int LONG_PRESS_MS = 500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,11 +57,11 @@ public class MainActivity extends BaseActivity {
 
         FrameLayout root = new FrameLayout(this);
 
-        LinearLayout content = new LinearLayout(this);
+        content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
+        // Initial padding — will be updated by insets listener
         content.setPadding(dp(16), dp(56), dp(16), dp(16));
 
-        // At a Glance
         if (settings.getAtAGlance()) {
             AtAGlanceView glance = new AtAGlanceView(this);
             LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
@@ -63,19 +69,16 @@ public class MainActivity extends BaseActivity {
             content.addView(glance, gp);
         }
 
-        // Flexible spacer
         View spacer = new View(this);
         content.addView(spacer, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        // Dock (no background pill)
         dockView = new DockView(this);
         LinearLayout.LayoutParams dp1 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
         dp1.bottomMargin = dp(8);
         content.addView(dockView, dp1);
 
-        // Google search bar below dock
         SearchBarView searchBar = new SearchBarView(this);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
@@ -83,14 +86,29 @@ public class MainActivity extends BaseActivity {
 
         searchBar.setOnClickListener(v -> {
             try {
-                Intent i = new Intent(Intent.ACTION_VIEW,
-                        android.net.Uri.parse("https://www.google.com"));
-                startActivity(i);
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://www.google.com")));
             } catch (Exception ignored) {}
         });
 
         root.addView(content);
         setContentView(root);
+
+        // Apply system bar insets to avoid overlap
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top, bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars());
+                top = bars.top;
+                bottom = bars.bottom;
+            } else {
+                top = insets.getSystemWindowInsetTop();
+                bottom = insets.getSystemWindowInsetBottom();
+            }
+            content.setPadding(dp(16), top + dp(12), dp(16), bottom + dp(8));
+            return insets;
+        });
+        root.requestApplyInsets();
 
         loadApps();
 
@@ -109,6 +127,7 @@ public class MainActivity extends BaseActivity {
                 downY = ev.getY();
                 downX = ev.getX();
                 longPressFired = false;
+                swipeConsumed = false;
                 longPressRunnable = this::showHomeMenu;
                 handler.postDelayed(longPressRunnable, LONG_PRESS_MS);
                 break;
@@ -116,9 +135,14 @@ public class MainActivity extends BaseActivity {
             case MotionEvent.ACTION_MOVE:
                 float dy = ev.getY() - downY;
                 float dx = Math.abs(ev.getX() - downX);
-                // Cancel long press if moved too much
                 if (Math.abs(dy) > 40 || dx > 40) {
                     handler.removeCallbacks(longPressRunnable);
+                }
+                // Swipe down → notification panel
+                if (!swipeConsumed && dy > 180 && dx < 150) {
+                    swipeConsumed = true;
+                    openNotificationPanel();
+                    return true;
                 }
                 break;
 
@@ -127,9 +151,9 @@ public class MainActivity extends BaseActivity {
                 float upDy = ev.getY() - downY;
                 float upDx = ev.getX() - downX;
                 // Swipe up → App Drawer
-                if (!longPressFired && upDy < -150 && Math.abs(upDx) < 200) {
+                if (!longPressFired && !swipeConsumed
+                        && upDy < -150 && Math.abs(upDx) < 200) {
                     startActivity(new Intent(this, AppDrawerActivity.class));
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     return true;
                 }
                 break;
@@ -142,21 +166,17 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
-    public void onBackPressed() {
-        // Home screen - do nothing
-    }
+    public void onBackPressed() { /* Home screen — do nothing */ }
 
     // ===== LONG-PRESS MENU =====
 
     private void showHomeMenu() {
         longPressFired = true;
-
         String[] options = {
                 getString(R.string.menu_wallpaper),
                 getString(R.string.menu_widgets),
                 getString(R.string.menu_settings)
         };
-
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setItems(options, (d, which) -> {
                     switch (which) {
@@ -175,27 +195,52 @@ public class MainActivity extends BaseActivity {
             Intent wp = new Intent(Intent.ACTION_SET_WALLPAPER);
             startActivity(Intent.createChooser(wp, "Wallpaper"));
         } catch (Exception e) {
-            android.widget.Toast.makeText(this,
-                    "Wallpaper picker not available", android.widget.Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(this, "Wallpaper not available",
+                    android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 
     private void openWidgetPicker() {
-        try {
-            AppWidgetManager mgr = AppWidgetManager.getInstance(this);
-            Intent intent = new Intent(AppWidgetManager.ACTION_APPWIDGET_PICK);
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
-            startActivity(intent);
-        } catch (Exception e) {
+        // Try multiple intents until one works
+        Intent[] attempts = new Intent[] {
+                new Intent(AppWidgetManager.ACTION_APPWIDGET_PICK),
+                new Intent("android.appwidget.action.APPWIDGET_PICK"),
+                new Intent("android.appwidget.action.APPWIDGET_CONFIGURE")
+        };
+        for (Intent intent : attempts) {
             try {
-                // Fallback: open system widget settings
-                Intent fallback = new Intent(android.provider.Settings.ACTION_SETTINGS);
-                startActivity(fallback);
-            } catch (Exception e2) {
-                android.widget.Toast.makeText(this,
-                        "Widget picker not available on this device",
-                        android.widget.Toast.LENGTH_SHORT).show();
+                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                    return;
+                }
+            } catch (Exception ignored) {}
+        }
+        android.widget.Toast.makeText(this,
+                "Widget picker not available on this device.\nComing in v6.",
+                android.widget.Toast.LENGTH_LONG).show();
+    }
+
+    private void openNotificationPanel() {
+        try {
+            Object service = getSystemService("statusbar");
+            Class<?> statusBarManager = Class.forName("android.app.StatusBarManager");
+            Method expand;
+            if (Build.VERSION.SDK_INT >= 17) {
+                expand = statusBarManager.getMethod("expandNotificationsPanel");
+            } else {
+                expand = statusBarManager.getMethod("expand");
             }
+            expand.invoke(service);
+        } catch (Exception e) {
+            // Fallback: open quick settings tile if possible
+            try {
+                Object service = getSystemService("statusbar");
+                Class<?> cls = Class.forName("android.app.StatusBarManager");
+                Method m = cls.getMethod("expandSettingsPanel");
+                m.invoke(service);
+            } catch (Exception ignored) {}
         }
     }
 
