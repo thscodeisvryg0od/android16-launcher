@@ -19,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import com.example.launcher16.icons.AtAGlanceView;
+import com.example.launcher16.icons.ClockView;
 import com.example.launcher16.icons.DockView;
 import com.example.launcher16.icons.SearchBarView;
 
@@ -32,6 +33,7 @@ public class MainActivity extends BaseActivity {
     private DockView dockView;
     private SettingsManager settings;
     private LinearLayout content;
+    private String lastLanguage = "";
 
     private float downY = 0f;
     private float downX = 0f;
@@ -46,6 +48,7 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         settings = new SettingsManager(this);
+        lastLanguage = settings.getLanguage();
 
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER,
@@ -55,46 +58,57 @@ public class MainActivity extends BaseActivity {
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
 
+        buildUI();
+    }
+
+    private void buildUI() {
         FrameLayout root = new FrameLayout(this);
 
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        // Initial padding — will be updated by insets listener
         content.setPadding(dp(16), dp(56), dp(16), dp(16));
 
+        // At a Glance
         if (settings.getAtAGlance()) {
             AtAGlanceView glance = new AtAGlanceView(this);
             LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(64));
+            gp.bottomMargin = dp(4);
             content.addView(glance, gp);
         }
 
-        View spacer = new View(this);
-        content.addView(spacer, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        // Clock widget
+        if (settings.getShowClock()) {
+            ClockView clock = new ClockView(this);
+            LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+            cp.topMargin = dp(8);
+            content.addView(clock, cp);
+        } else {
+            View spacer = new View(this);
+            content.addView(spacer, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        }
 
+        // Dock
         dockView = new DockView(this);
         LinearLayout.LayoutParams dp1 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(72));
         dp1.bottomMargin = dp(8);
         content.addView(dockView, dp1);
 
+        // Search bar
         SearchBarView searchBar = new SearchBarView(this);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(52));
         content.addView(searchBar, sp);
 
-        searchBar.setOnClickListener(v -> {
-            try {
-                startActivity(new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://www.google.com")));
-            } catch (Exception ignored) {}
-        });
+        searchBar.setOnClickListener(v -> openGoogleSearch());
 
         root.addView(content);
         setContentView(root);
 
-        // Apply system bar insets to avoid overlap
+        // Insets
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             int top, bottom;
             if (Build.VERSION.SDK_INT >= 30) {
@@ -111,14 +125,48 @@ public class MainActivity extends BaseActivity {
         root.requestApplyInsets();
 
         loadApps();
+        refreshDock();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Recreate if language changed
+        String current = settings.getLanguage();
+        if (!current.equals(lastLanguage)) {
+            lastLanguage = current;
+            recreate();
+            return;
+        }
+        // Refresh dock if count changed
+        refreshDock();
+    }
+
+    private void refreshDock() {
+        if (dockView == null) return;
         dockView.setApps(getDockApps(), app -> {
             Intent i = getPackageManager().getLaunchIntentForPackage(app.packageName);
             if (i != null) startActivity(i);
-        });
+        }, app -> showAppMenu(app));
     }
 
-    // ===== GESTURE HANDLING =====
+    private void openGoogleSearch() {
+        // Try Google app first
+        try {
+            Intent g = getPackageManager()
+                    .getLaunchIntentForPackage("com.google.android.googlequicksearchbox");
+            if (g != null) {
+                startActivity(g);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback to web
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://www.google.com")));
+        } catch (Exception ignored) {}
+    }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -134,12 +182,12 @@ public class MainActivity extends BaseActivity {
 
             case MotionEvent.ACTION_MOVE:
                 float dy = ev.getY() - downY;
-                float dx = Math.abs(ev.getX() - downX);
-                if (Math.abs(dy) > 40 || dx > 40) {
+                float dx = ev.getX() - downX;
+                if (Math.abs(dy) > 40 || Math.abs(dx) > 40) {
                     handler.removeCallbacks(longPressRunnable);
                 }
                 // Swipe down → notification panel
-                if (!swipeConsumed && dy > 180 && dx < 150) {
+                if (!swipeConsumed && dy > 180 && Math.abs(dx) < 150) {
                     swipeConsumed = true;
                     openNotificationPanel();
                     return true;
@@ -150,10 +198,19 @@ public class MainActivity extends BaseActivity {
                 handler.removeCallbacks(longPressRunnable);
                 float upDy = ev.getY() - downY;
                 float upDx = ev.getX() - downX;
+
                 // Swipe up → App Drawer
                 if (!longPressFired && !swipeConsumed
                         && upDy < -150 && Math.abs(upDx) < 200) {
                     startActivity(new Intent(this, AppDrawerActivity.class));
+                    overridePendingTransition(R.anim.slide_up_in, R.anim.stay);
+                    return true;
+                }
+                // Swipe left → Google News
+                if (settings.getNewsSwipe()
+                        && !longPressFired && !swipeConsumed
+                        && upDx < -150 && Math.abs(upDy) < 200) {
+                    openGoogleNews();
                     return true;
                 }
                 break;
@@ -165,10 +222,23 @@ public class MainActivity extends BaseActivity {
         return super.dispatchTouchEvent(ev);
     }
 
-    @Override
-    public void onBackPressed() { /* Home screen — do nothing */ }
+    private void openGoogleNews() {
+        try {
+            Intent i = getPackageManager()
+                    .getLaunchIntentForPackage("com.google.android.apps.magazines");
+            if (i != null) {
+                startActivity(i);
+                return;
+            }
+        } catch (Exception ignored) {}
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://news.google.com")));
+        } catch (Exception ignored) {}
+    }
 
-    // ===== LONG-PRESS MENU =====
+    @Override
+    public void onBackPressed() { }
 
     private void showHomeMenu() {
         longPressFired = true;
@@ -186,8 +256,34 @@ public class MainActivity extends BaseActivity {
                             startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                             break;
                     }
-                })
-                .show();
+                }).show();
+    }
+
+    private void showAppMenu(AppInfo app) {
+        String[] options = {
+                getString(R.string.app_info),
+                settings.isHidden(app.packageName)
+                        ? getString(R.string.unhide_app)
+                        : getString(R.string.hide_app)
+        };
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(app.label)
+                .setItems(options, (d, which) -> {
+                    if (which == 0) {
+                        Intent i = new Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        i.setData(Uri.parse("package:" + app.packageName));
+                        startActivity(i);
+                    } else if (which == 1) {
+                        if (settings.isHidden(app.packageName)) {
+                            settings.unhideApp(app.packageName);
+                        } else {
+                            settings.hideApp(app.packageName);
+                        }
+                        loadApps();
+                        refreshDock();
+                    }
+                }).show();
     }
 
     private void openWallpaperPicker() {
@@ -195,56 +291,32 @@ public class MainActivity extends BaseActivity {
             Intent wp = new Intent(Intent.ACTION_SET_WALLPAPER);
             startActivity(Intent.createChooser(wp, "Wallpaper"));
         } catch (Exception e) {
-            android.widget.Toast.makeText(this, "Wallpaper not available",
+            android.widget.Toast.makeText(this, "Wallpaper picker unavailable",
                     android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 
     private void openWidgetPicker() {
-        // Try multiple intents until one works
-        Intent[] attempts = new Intent[] {
-                new Intent(AppWidgetManager.ACTION_APPWIDGET_PICK),
-                new Intent("android.appwidget.action.APPWIDGET_PICK"),
-                new Intent("android.appwidget.action.APPWIDGET_CONFIGURE")
-        };
-        for (Intent intent : attempts) {
-            try {
-                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    startActivity(intent);
-                    return;
-                }
-            } catch (Exception ignored) {}
+        try {
+            AppWidgetManager mgr = AppWidgetManager.getInstance(this);
+            Intent intent = new Intent(AppWidgetManager.ACTION_APPWIDGET_PICK);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
+            startActivity(intent);
+        } catch (Exception e) {
+            android.widget.Toast.makeText(this,
+                    "Widget picker will come in a future version",
+                    android.widget.Toast.LENGTH_LONG).show();
         }
-        android.widget.Toast.makeText(this,
-                "Widget picker not available on this device.\nComing in v6.",
-                android.widget.Toast.LENGTH_LONG).show();
     }
 
     private void openNotificationPanel() {
         try {
             Object service = getSystemService("statusbar");
-            Class<?> statusBarManager = Class.forName("android.app.StatusBarManager");
-            Method expand;
-            if (Build.VERSION.SDK_INT >= 17) {
-                expand = statusBarManager.getMethod("expandNotificationsPanel");
-            } else {
-                expand = statusBarManager.getMethod("expand");
-            }
-            expand.invoke(service);
-        } catch (Exception e) {
-            // Fallback: open quick settings tile if possible
-            try {
-                Object service = getSystemService("statusbar");
-                Class<?> cls = Class.forName("android.app.StatusBarManager");
-                Method m = cls.getMethod("expandSettingsPanel");
-                m.invoke(service);
-            } catch (Exception ignored) {}
-        }
+            Class<?> cls = Class.forName("android.app.StatusBarManager");
+            Method m = cls.getMethod("expandNotificationsPanel");
+            m.invoke(service);
+        } catch (Exception ignored) {}
     }
-
-    // ===== APP LOADING =====
 
     private void loadApps() {
         PackageManager pm = getPackageManager();
@@ -254,6 +326,8 @@ public class MainActivity extends BaseActivity {
         allApps.clear();
         for (ResolveInfo ri : resolved) {
             if (ri.activityInfo.packageName.equals(getPackageName())) continue;
+            if (!settings.getShowHidden() && settings.isHidden(ri.activityInfo.packageName))
+                continue;
             AppInfo info = new AppInfo();
             info.label = ri.loadLabel(pm).toString();
             info.packageName = ri.activityInfo.packageName;
@@ -264,22 +338,23 @@ public class MainActivity extends BaseActivity {
 
     private List<AppInfo> getDockApps() {
         List<AppInfo> dock = new ArrayList<>();
+        int maxCount = settings.getDockCount();
         String[] favorites = {
                 "com.android.dialer", "com.android.mms",
                 "com.android.chrome", "com.android.camera2",
                 "com.google.android.apps.messaging"
         };
         for (String pkg : favorites) {
+            if (dock.size() >= maxCount) break;
             for (AppInfo a : allApps) {
                 if (a.packageName.equals(pkg) && !dock.contains(a)) {
                     dock.add(a);
                     break;
                 }
             }
-            if (dock.size() >= 5) break;
         }
         if (dock.isEmpty()) {
-            dock.addAll(allApps.subList(0, Math.min(5, allApps.size())));
+            dock.addAll(allApps.subList(0, Math.min(maxCount, allApps.size())));
         }
         return dock;
     }
