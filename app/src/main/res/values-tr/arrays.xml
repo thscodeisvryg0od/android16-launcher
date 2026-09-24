@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="languages">
+        <item>English</item>
+        <item>Türkçe</item>
+        <item>Sistem varsayılanı</item>
+    </string-array>
+</resources>
