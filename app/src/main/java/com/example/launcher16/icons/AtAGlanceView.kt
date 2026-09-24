@@ -11,6 +11,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Pixel-style At a Glance widget.
+ * Left: date. Right: weather in circular icon.
+ */
 class AtAGlanceView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -18,44 +22,72 @@ class AtAGlanceView @JvmOverloads constructor(
 ) : View(context, attrs, defStyle) {
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#33FFFFFF")
+        color = Color.parseColor("#CC1F1F1F")
     }
     private val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 42f
         isFakeBoldText = true
     }
+    private val weatherCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#33FFFFFF")
+    }
     private val weatherPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        isFakeBoldText = true
+        textAlign = Paint.Align.CENTER
+    }
+    private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#B0FFFFFF")
-        textSize = 32f
     }
     private val rect = RectF()
 
-    private var dateText: String = ""
-    private var dayText: String = ""
+    private var dateText = ""
+    private var dayText = ""
 
     init {
-        updateDate()
+        refresh()
     }
 
-    private fun updateDate() {
+    fun refresh() {
         val now = Date()
-        dateText = SimpleDateFormat("EEEE", Locale.ENGLISH).format(now)
-        dayText = SimpleDateFormat("MMM d", Locale.ENGLISH).format(now)
+        dayText = SimpleDateFormat("EEE", Locale.ENGLISH).format(now)
+        dateText = SimpleDateFormat("MMM d", Locale.ENGLISH).format(now)
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val r = 24f * resources.displayMetrics.density
+        val density = resources.displayMetrics.density
+
+        val r = 28f * density
         rect.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(rect, r, r, bgPaint)
 
-        val padX = 24f * resources.displayMetrics.density
-        val padY = 20f * resources.displayMetrics.density
+        val padX = 22f * density
+        val cy = height / 2f
 
-        canvas.drawText("$dateText, $dayText", padX, height / 2f + 8f, datePaint)
-        canvas.drawText("☀  22°", width - 140f * resources.displayMetrics.density,
-            height / 2f + 8f, weatherPaint)
+        // Left: Date in two sizes
+        datePaint.textSize = 18f * density
+        datePaint.color = Color.parseColor("#B0FFFFFF")
+        canvas.drawText(dayText, padX, cy - 2f * density, datePaint)
+
+        datePaint.textSize = 22f * density
+        datePaint.color = Color.WHITE
+        canvas.drawText(dateText, padX, cy + 22f * density, datePaint)
+
+        // Right: Weather circle
+        val circleR = 24f * density
+        val circleCx = width - circleR - 20f * density
+        canvas.drawCircle(circleCx, cy, circleR, weatherCirclePaint)
+
+        weatherPaint.textSize = 20f * density
+        canvas.drawText("22°", circleCx, cy + 7f * density, weatherPaint)
+
+        // Three dots
+        val dotsX = width - circleR * 2 - 40f * density
+        for (i in 0..2) {
+            canvas.drawCircle(dotsX, cy - 4f * density + i * 6f * density,
+                1.5f * density, dotPaint)
+        }
     }
 }
