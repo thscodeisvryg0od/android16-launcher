@@ -19,32 +19,35 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <!-- Home Settings -->
         <TextView
             android:text="@string/home_settings"
             android:textColor="#9E9E9E"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <Switch
-            android:id="@+id/glanceSwitch"
+        <Switch android:id="@+id/glanceSwitch"
             android:text="@string/at_a_glance"
             android:textColor="#FFFFFF"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
-        <Switch
-            android:id="@+id/addIconsSwitch"
+        <Switch android:id="@+id/clockSwitch"
+            android:text="@string/show_clock"
+            android:textColor="#FFFFFF"
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+        <Switch android:id="@+id/addIconsSwitch"
             android:text="@string/add_icons_home"
             android:textColor="#FFFFFF"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
-        <!-- Appearance -->
+        <Switch android:id="@+id/newsSwitch"
+            android:text="@string/news_swipe"
+            android:textColor="#FFFFFF"
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
         <TextView
             android:text="@string/appearance"
             android:textColor="#9E9E9E"
@@ -55,48 +58,59 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <TextView
-            android:text="@string/grid_columns"
+        <TextView android:text="@string/grid_columns"
             android:textColor="#FFFFFF"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-        <RadioGroup
-            android:id="@+id/columnGroup"
+        <RadioGroup android:id="@+id/columnGroup"
             android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <RadioButton android:id="@+id/col4" android:text="4" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <RadioButton android:id="@+id/col5" android:text="5" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <RadioButton android:id="@+id/col6" android:text="6" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <RadioButton android:id="@+id/col4" android:text="4"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/col5" android:text="5"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/col6" android:text="6"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </RadioGroup>
 
-        <TextView
-            android:text="@string/icon_size"
+        <TextView android:text="@string/icon_size"
             android:textColor="#FFFFFF"
             android:layout_marginTop="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-        <RadioGroup
-            android:id="@+id/sizeGroup"
+        <RadioGroup android:id="@+id/sizeGroup"
             android:orientation="horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <RadioButton android:id="@+id/sizeSmall" android:text="@string/size_small" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <RadioButton android:id="@+id/sizeMedium" android:text="@string/size_medium" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <RadioButton android:id="@+id/sizeLarge" android:text="@string/size_large" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <RadioButton android:id="@+id/sizeSmall" android:text="@string/size_small"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/sizeMedium" android:text="@string/size_medium"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/sizeLarge" android:text="@string/size_large"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </RadioGroup>
 
-        <Switch
-            android:id="@+id/labelsSwitch"
+        <Switch android:id="@+id/labelsSwitch"
             android:text="@string/show_labels"
             android:textColor="#FFFFFF"
             android:layout_marginTop="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
-        <!-- General -->
+        <TextView android:text="@string/dock_count"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="12dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <RadioGroup android:id="@+id/dockGroup"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <RadioButton android:id="@+id/dock3" android:text="3"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/dock4" android:text="4"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/dock5" android:text="5"
+                android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </RadioGroup>
+
         <TextView
             android:text="@string/general"
             android:textColor="#9E9E9E"
@@ -107,27 +121,25 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <TextView
-            android:text="@string/language"
+        <TextView android:text="@string/language"
             android:textColor="#FFFFFF"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-        <Spinner
-            android:id="@+id/langSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+        <Spinner android:id="@+id/langSpinner"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="4dp"/>
 
-        <!-- Save -->
-        <Button
-            android:id="@+id/saveBtn"
+        <Switch android:id="@+id/hiddenSwitch"
+            android:text="@string/hidden_apps"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+        <Button android:id="@+id/saveBtn"
             android:text="Save"
             android:layout_marginTop="32dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
-        <!-- About -->
         <TextView
             android:text="@string/about"
             android:textColor="#9E9E9E"
@@ -135,14 +147,11 @@
             android:textStyle="bold"
             android:layout_marginTop="32dp"
             android:layout_marginBottom="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-        <TextView
-            android:text="Pulse Launcher • v4.0"
+        <TextView android:text="Pulse Launcher • v6.0"
             android:textColor="#FFFFFF"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
     </LinearLayout>
 </ScrollView>
