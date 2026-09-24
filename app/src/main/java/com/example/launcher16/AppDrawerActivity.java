@@ -5,11 +5,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.LinearLayout;
@@ -26,9 +25,7 @@ public class AppDrawerActivity extends BaseActivity {
     private SettingsManager settings;
 
     private float downY = 0f;
-    private boolean dismissFired = false;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private Runnable dismissRunnable;
+    private boolean isPullingDown = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +66,7 @@ public class AppDrawerActivity extends BaseActivity {
         grid.setHorizontalSpacing(dp(4));
         grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
         grid.setSelector(android.R.color.transparent);
+        grid.setOverScrollMode(View.OVER_SCROLL_NEVER);
         root.addView(grid, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
@@ -97,21 +95,31 @@ public class AppDrawerActivity extends BaseActivity {
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 downY = ev.getY();
-                dismissFired = false;
-                dismissRunnable = () -> { /* no auto dismiss */ };
+                isPullingDown = false;
                 break;
-
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_MOVE:
                 float dy = ev.getY() - downY;
-                if (!dismissFired && dy > 200) {
-                    dismissFired = true;
+                if (dy > 30 && isGridAtTop()) {
+                    isPullingDown = true;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                float upDy = ev.getY() - downY;
+                if (isPullingDown && upDy > 200) {
                     finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     return true;
                 }
+                isPullingDown = false;
                 break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    private boolean isGridAtTop() {
+        if (grid.getChildCount() == 0) return true;
+        View firstChild = grid.getChildAt(0);
+        int firstPos = grid.getFirstVisiblePosition();
+        return firstPos == 0 && firstChild != null && firstChild.getTop() >= -5;
     }
 
     private void loadApps() {
