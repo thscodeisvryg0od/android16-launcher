@@ -14,10 +14,6 @@ import android.view.View
 
 import com.example.launcher16.AppInfo
 
-/**
- * Dock without background pill — icons float directly on wallpaper.
- * Matches Pixel / reference style.
- */
 class DockView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -26,6 +22,7 @@ class DockView @JvmOverloads constructor(
 
     private var apps: List<AppInfo> = emptyList()
     private var onAppClick: java.util.function.Consumer<AppInfo>? = null
+    private var onAppLongClick: java.util.function.Consumer<AppInfo>? = null
     private var pressedIndex = -1
 
     private val handler = Handler(Looper.getMainLooper())
@@ -35,21 +32,18 @@ class DockView @JvmOverloads constructor(
     private val longPressRunnable = Runnable {
         if (downIndex >= 0 && downIndex < apps.size) {
             longPressed = true
-            val app = apps[downIndex]
-            try {
-                val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                i.data = Uri.parse("package:${app.packageName}")
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(i)
-            } catch (_: Exception) { }
+            onAppLongClick?.accept(apps[downIndex])
             pressedIndex = -1
             invalidate()
         }
     }
 
-    fun setApps(list: List<AppInfo>, listener: java.util.function.Consumer<AppInfo>) {
+    fun setApps(list: List<AppInfo>,
+                click: java.util.function.Consumer<AppInfo>,
+                longClick: java.util.function.Consumer<AppInfo>? = null) {
         apps = list
-        onAppClick = listener
+        onAppClick = click
+        onAppLongClick = longClick
         invalidate()
     }
 
